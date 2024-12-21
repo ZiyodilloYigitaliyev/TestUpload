@@ -8,7 +8,9 @@ import zipfile
 import os
 import boto3
 from botocore.exceptions import NoCredentialsError
+from dotenv import load_dotenv
 
+load_dotenv()
 
 DATABASE_URL = "sqlite:///./questions.db"
 Base = declarative_base()
@@ -34,10 +36,10 @@ class Question(Base):
 Base.metadata.create_all(bind=engine)
 
 # AWS konfiguratsiyasi
-AWS_ACCESS_KEY_ID = "AKIAX3DNHIRTFH7FV2CF"
-AWS_SECRET_ACCESS_KEY = "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"
-AWS_REGION_NAME = "eu-north-1"
-BUCKET_NAME = "scan-app-uploads"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION_NAME = os.getenv("AWS_REGION_NAME")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
 
 # S3 mijozini sozlash
 s3_client = boto3.client(

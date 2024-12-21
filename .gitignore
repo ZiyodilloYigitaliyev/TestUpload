@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/venv,database
-# Edit at https://www.toptal.com/developers/gitignore?templates=venv,database
+# Created by https://www.toptal.com/developers/gitignore/api/venv,database,dotenv
+# Edit at https://www.toptal.com/developers/gitignore?templates=venv,database,dotenv
 
 ### Database ###
 *.accdb
@@ -10,6 +10,9 @@
 *.sqlite3
 *.db-shm
 *.db-wal
+
+### dotenv ###
+.env
 
 ### venv ###
 # Virtualenv
@@ -25,4 +28,4 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
-# End of https://www.toptal.com/developers/gitignore/api/venv,database
+# End of https://www.toptal.com/developers/gitignore/api/venv,database,dotenv
