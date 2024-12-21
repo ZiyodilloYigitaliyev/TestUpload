@@ -36,9 +36,9 @@ class Question(Base):
 Base.metadata.create_all(bind=engine)
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION_NAME = os.getenv("AWS_REGION_NAME")
-BUCKET_NAME = os.getenv("BUCKET_NAME")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
+AWS_REGION_NAME = os.getenv("S3_REGION")
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 # S3 mijozini sozlash
 s3_client = boto3.client(
