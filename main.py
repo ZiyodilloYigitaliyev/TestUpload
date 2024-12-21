@@ -1,8 +1,8 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends
 from bs4 import BeautifulSoup
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 import shutil
 import zipfile
 import os
@@ -12,7 +12,12 @@ DATABASE_URL = "sqlite:///./questions.db"
 Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 class Question(Base):
     __tablename__ = "questions"
 
@@ -21,6 +26,8 @@ class Question(Base):
     options = Column(Text, nullable=False)
     true_answer = Column(String, nullable=True)
     image = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    subject =  Column(String, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,7 +35,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 @app.post("/upload/")
-async def upload_zip(file: UploadFile):
+async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...),):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
@@ -121,7 +128,10 @@ async def upload_zip(file: UploadFile):
                 text=q["text"],
                 options=q["options"],
                 true_answer=q["true_answer"],
-                image=q["image"]
+                image=q["image"],
+                category=category,
+                subject=subject
+                
             )
             db.add(question)
         db.commit()
@@ -133,3 +143,24 @@ async def upload_zip(file: UploadFile):
     shutil.rmtree(extract_dir)
 
     return {"questions": questions}
+
+@app.get("/questions/")
+def get_questions(db: Session = Depends(get_db)):
+    questions = db.query(Question).all()
+    
+    # Savollarni kategoriyalariga qarab guruhlash
+    grouped_questions = {}
+    for question in questions:
+        if question.category not in grouped_questions:
+            grouped_questions[question.category] = []
+        grouped_questions[question.category].append({
+            "id": question.id,
+            "category": question.category,
+            "subject": question.subject,
+            "text": question.text,
+            "options": question.options,
+            "image": question.image
+        })
+    
+    return grouped_questions
+
