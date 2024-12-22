@@ -193,6 +193,7 @@ def get_questions(db: Session = Depends(get_db)):
             "subject": question.subject,
             "text": question.text,
             "options": question.options,
+            "true_answer": question.true_answer,
             "image": question.image
         })
     
