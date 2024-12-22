@@ -198,13 +198,14 @@ def get_questions(db: Session = Depends(get_db)):
     
     return grouped_questions
 
-# GET so'rovi bilan barcha ma'lumotlarni o'chirish
-@app.get("/delete-all-questions/")
-def delete_all_questions(db: Session = next(get_db())):
+@app.delete("/delete-all-questions/", response_model=dict)
+def delete_all_questions(db: Session = Depends(get_db)):
     try:
         # Barcha ma'lumotlarni o'chirish
         db.query(Question).delete()
         db.commit()
         return {"message": "All questions have been deleted successfully"}
     except Exception as e:
+        db.rollback()  # Xatolik yuzaga kelsa, tranzaktsiyani bekor qilish
         raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
+
