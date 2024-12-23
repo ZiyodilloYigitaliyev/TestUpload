@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, HTTPException, Form, Depends
 from bs4 import BeautifulSoup
+from fastapi.security import HTTPBearer
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -9,19 +10,29 @@ import os
 import boto3
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL").replace("postgres://", "postgresql://")
+DATABASE_URL = os.getenv("DATABASE_URL")
 Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+        
 class Question(Base):
     __tablename__ = "questions"
 
@@ -32,13 +43,21 @@ class Question(Base):
     image = Column(String, nullable=True)
     category = Column(String, nullable=True)
     subject =  Column(String, nullable=True)
+    user_id = Column(Integer, nullable=False)
+    
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
 
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
-AWS_REGION_NAME = os.getenv("S3_REGION")
-BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION_NAME = os.getenv("AWS_REGION_NAME")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
 
 # S3 mijozini sozlash
 s3_client = boto3.client(
@@ -61,8 +80,78 @@ def upload_to_s3(file_path: str, key: str) -> str:
 # FastAPI app
 app = FastAPI()
 
+
+# Password Hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_current_user(token: str = Depends(HTTPBearer()), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+
+# Token Generation
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# Routes
+@app.post("/register/", response_model=dict)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    hashed_password = get_password_hash(user.password)
+    new_user = User(username=user.username, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User registered successfully"}
+
+@app.post("/login/", response_model=Token)
+def login(user: UserLogin, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if not db_user or not verify_password(user.password, db_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @app.post("/upload/")
-async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...)):
+async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
@@ -113,15 +202,15 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
             
             image_src = None
             for root, dirs, files in os.walk(extract_dir):
-                for files in files:
+                for file in files:
                     if file == os.path.basename(img_src):
                         image_src = os.path.join(root, file)
                         break
-                    if image_src:
-                        break
+                if image_src:
+                    break
                 
-                if not image_src:
-                    raise HTTPException(status_code=400, detail=f"Image file not found: {img_src}")
+            if not image_src:
+                raise HTTPException(status_code=400, detail=f"Image file not found: {img_src}")
             
             image_key = f"images/{os.path.basename(image_src)}"
             s3_url = upload_to_s3(image_src, image_key)
@@ -129,7 +218,7 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
 
         if text[0].isdigit() and "." in text:
             if current_block["question"]:
-                options_text = " ".join(current_block["variants"])
+                options_text = "\n".join(current_block["variants"])
                 questions.append({
                     "text": current_block["question"],
                     "options": options_text,
@@ -148,7 +237,7 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
                 current_block["variants"][-1] += f" {text}"
 
     if current_block["question"]:
-        options_text = " ".join(current_block["variants"])
+        options_text = "\n".join(current_block["variants"])
         questions.append({
             "text": current_block["question"],
             "options": options_text,
@@ -165,7 +254,8 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
                 true_answer=q["true_answer"],
                 image=q["image"],
                 category=category,
-                subject=subject
+                subject=subject,
+                user_id=current_user.id
             )
             db.add(question)
         db.commit()
@@ -182,12 +272,14 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
 def get_questions(db: Session = Depends(get_db)):
     questions = db.query(Question).all()
     
-    # Savollarni kategoriyalariga qarab guruhlash
     grouped_questions = {}
     for question in questions:
-        if question.category not in grouped_questions:
-            grouped_questions[question.category] = []
-        grouped_questions[question.category].append({
+        user = db.query(User).filter(User.id == question.user_id).first()
+        username = user.username if user else "Unknown"
+
+        if username not in grouped_questions:
+            grouped_questions[username] = []
+        grouped_questions[username].append({
             "id": question.id,
             "category": question.category,
             "subject": question.subject,
@@ -199,14 +291,13 @@ def get_questions(db: Session = Depends(get_db)):
     
     return grouped_questions
 
-@app.delete("/delete-all-questions/", response_model=dict)
-def delete_all_questions(db: Session = Depends(get_db)):
-    try:
-        # Barcha ma'lumotlarni o'chirish
-        db.query(Question).delete()
-        db.commit()
-        return {"message": "All questions have been deleted successfully"}
-    except Exception as e:
-        db.rollback()  # Xatolik yuzaga kelsa, tranzaktsiyani bekor qilish
-        raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
 
+@app.delete("/delete-my-questions/", response_model=dict)
+def delete_user_questions(db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+    try:
+        deleted_count = db.query(Question).filter(Question.username == current_user).delete()
+        db.commit()
+        return {"message": f"{deleted_count} questions deleted successfully", "username": current_user}
+    except Exception as e:
+        db.rollback()  # Xatolik yuzaga kelsa tranzaktsiyani bekor qilish
+        raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
