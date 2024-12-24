@@ -95,7 +95,7 @@ def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_
         raise HTTPException(status_code=401, detail="User not found.")
 
     # Foydalanuvchining ma'lumotlarini qaytarish
-    return {"sub": db_user.username, "id": db_user.id, "is_active": db_user.is_active}
+    return {"sub": db_user.username, "id": db_user.id}
 
 # AWS S3 sozlamalari
 s3_client = boto3.client(
