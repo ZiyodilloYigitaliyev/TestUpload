@@ -6,7 +6,7 @@ from app.dependencies import get_db, get_current_user
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
-@router.get("/questions")
+@router.get("/")
 def get_questions(db: Session = Depends(get_db)):
     questions = db.query(Question).all()
     
