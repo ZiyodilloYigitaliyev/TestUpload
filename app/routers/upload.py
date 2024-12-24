@@ -118,7 +118,7 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
                 image=q["image"],
                 category=category,
                 subject=subject,
-                user_id=current_user.id
+                # user_id=current_user.id
             )
             db.add(question)
         db.commit()
