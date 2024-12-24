@@ -1,12 +1,20 @@
 # 5. models.py - Ma'lumotlar bazasi modellarini yaratish
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from app.database import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+
+class Token(Base):
+    __tablename__ = "tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User")
 
 class Question(Base):
     __tablename__ = "questions"
