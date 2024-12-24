@@ -9,12 +9,12 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
 
-class Token(Base):
+class TokenModel(Base):
     __tablename__ = "tokens"
     id = Column(Integer, primary_key=True, index=True)
-    token = Column(String, unique=True)
+    access_token = Column(String, nullable=False)
+    token_type = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User")
 
 class Question(Base):
     __tablename__ = "questions"

@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-import jwt
+from jose import jwt, JWTError
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -38,14 +38,15 @@ def get_db():
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
 # Hozirgi foydalanuvchini olish
 def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token")), db: Session = Depends(get_db)):
@@ -64,15 +65,37 @@ def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token")
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
 
-# Tokenni tekshirish
-def verify_token(token: str = Depends(OAuth2PasswordBearer(tokenUrl="token"))) -> dict:
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """
+    Tokenni tasdiqlash funksiyasi.
+    :param token: Kiruvchi JWT token.
+    :param db: Ma'lumotlar bazasi sessiyasi.
+    :return: Foydalanuvchi haqidagi ma'lumotlar.
+    """
     try:
+        # Tokenni dekodlash
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token: username missing.")
+        
+        # Tokenning amal qilish muddatini tekshirish (agar mavjud bo'lsa)
+        exp = payload.get("exp")
+        if exp and datetime.utcnow().timestamp() > exp:
+            raise HTTPException(status_code=401, detail="Token has expired.")
+
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid token.") from e
+
+    # Foydalanuvchini ma'lumotlar bazasidan topish
+    db_user = db.query(User).filter(User.username == username).first()
+    if not db_user:
+        raise HTTPException(status_code=401, detail="User not found.")
+
+    # Foydalanuvchining ma'lumotlarini qaytarish
+    return {"sub": db_user.username, "id": db_user.id, "is_active": db_user.is_active}
 
 # AWS S3 sozlamalari
 s3_client = boto3.client(
