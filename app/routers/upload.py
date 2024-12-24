@@ -1,16 +1,20 @@
 # 3. routers/upload.py - Fayl yuklash
 from fastapi import APIRouter, UploadFile, Form, Depends, HTTPException
-from app.dependencies import get_current_user, upload_to_s3, get_db
+from app.dependencies import get_current_user, upload_to_s3, get_db, verify_token
 from sqlalchemy.orm import Session
 from app.models import Question, User
 from app.database import SessionLocal
 from bs4 import BeautifulSoup
 import shutil, zipfile, os
 
+
 router = APIRouter(prefix="/upload", tags=["Upload"])
 
+
 @router.post("/zip/")
-async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...), token: dict = Depends(verify_token), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Token orqali foydalanuvchining ma'lumotlarini olish
+    username = token.get("sub")  # "sub" token ichidagi foydalanuvchi nomi (yoki boshqa parametr)
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
@@ -121,8 +125,11 @@ async def upload_zip(file: UploadFile, subject: str = Form(...), category: str =
     finally:
         db.close()
 
-    os.remove(zip_file_location)
-    shutil.rmtree(extract_dir)
+    try:
+        os.remove(zip_file_location)
+        shutil.rmtree(extract_dir)
+    except Exception as e:
+        print(f"Failed to clean up files: {e}")
 
     return {"questions": questions}
 
