@@ -1,6 +1,6 @@
 # 5. models.py - Ma'lumotlar bazasi modellarini yaratish
 from sqlalchemy import Column, Integer, String, Text
-from database import Base
+from app.database import Base
 
 class User(Base):
     __tablename__ = "users"
