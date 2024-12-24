@@ -46,6 +46,8 @@ class Question(Base):
     options = Column(Text, nullable=False)
     true_answer = Column(String, nullable=True)
     image = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    subject = Column(String, nullable=True)
     user_id = Column(Integer, nullable=False)
 
     
@@ -80,7 +82,6 @@ def upload_to_s3(file_path: str, key: str) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AWS yuklashda xatolik yuz berdi: {str(e)}")
 
-# FastAPI app
 app = FastAPI()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -151,7 +152,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/upload/")
-async def upload_zip(files: list[UploadFile], current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def upload_zip(files: list[UploadFile], subject: str = Form(...), category: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
@@ -253,6 +254,8 @@ async def upload_zip(files: list[UploadFile], current_user: User = Depends(get_c
                 options=q["options"],
                 true_answer=q["true_answer"],
                 image=q["image"],
+                category=category,
+                subject=subject,
                 user_id=current_user.id
             )
             db.add(question)
@@ -272,10 +275,12 @@ def get_questions(db: Session = Depends(get_db)):
     
     grouped_questions = {}
     for question in questions:
-        if question not in grouped_questions:
-            grouped_questions[question] = []
-        grouped_questions[question].append({
+        if question.category not in grouped_questions:
+            grouped_questions[question.category] = []
+        grouped_questions[question.category].append({
             "id": question.id,
+            "category": question.category,
+            "subject": question.subject,
             "text": question.text,
             "options": question.options,
             "true_answer": question.true_answer,
