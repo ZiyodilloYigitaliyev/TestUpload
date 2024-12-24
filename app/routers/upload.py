@@ -13,8 +13,10 @@ router = APIRouter(prefix="/upload", tags=["Upload"])
 
 @router.post("/zip/")
 async def upload_zip(file: UploadFile, subject: str = Form(...), category: str = Form(...), token: dict = Depends(verify_token), db: Session = Depends(get_db)):
-    # Token orqali foydalanuvchining ma'lumotlarini olish
-    username = token.get("sub")  # "sub" token ichidagi foydalanuvchi nomi (yoki boshqa parametr)
+    # Tokenni tekshirish
+    username = token.get("sub")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid or missing token.")
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
