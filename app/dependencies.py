@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session, sessionmaker
 from app.database import SessionLocal
-from models import User
+from app.models import User
 import os
 import datetime
 import boto3

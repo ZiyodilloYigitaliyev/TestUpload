@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import auth, upload, question
+from ..routers import auth, upload, question
 from app.database import Base, engine
 
 # Ma'lumotlar bazasini yaratish
