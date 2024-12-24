@@ -9,7 +9,6 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
-    id: int
 
 class Token(BaseModel):
     access_token: str

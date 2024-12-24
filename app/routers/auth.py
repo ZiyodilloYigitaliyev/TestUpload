@@ -21,13 +21,22 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    # Foydalanuvchini ma'lumotlar bazasidan tekshirish
     db_user = db.query(User).filter(User.username == user.username).first()
-    if not user or not verify_password(user.password, db_user.hashed_password):
+    
+    # Agar foydalanuvchi topilmasa yoki parol noto'g'ri bo'lsa
+    if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
-    token = create_access_token({"sub": user.username})
-    new_token = Token(token=token, user_id=user.id)
+    
+    # Token yaratish
+    token = create_access_token({"sub": db_user.username})
+    
+    # Yangi tokenni saqlash
+    new_token = Token(token=token, user_id=db_user.id)
     db.add(new_token)
     db.commit()
+    
+    # Javobni qaytarish
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/logout")
