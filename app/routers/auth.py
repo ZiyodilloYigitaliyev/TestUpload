@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models import User, Token
-from app.schemas import UserCreate, UserLogin, Token
+from app.schemas import UserCreate, UserLogin
 from app.dependencies import get_db, create_access_token, get_password_hash, verify_password
 from datetime import timedelta
 
@@ -41,7 +41,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 def logout(token: str, db: Session = Depends(get_db)):
-    db_token = db.query(Token).filter(Token.token == token).first()
+    db_token = db.query(Token).filter(Token.access_token == token).first()
     if not db_token:
         raise HTTPException(status_code=400, detail="Invalid token")
     db.delete(db_token)
