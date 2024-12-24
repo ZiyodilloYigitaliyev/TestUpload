@@ -1,7 +1,7 @@
 # 2. routers/auth.py - Foydalanuvchi autentifikatsiyasi
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models import User, TokenModel
+from app.models import User, Token
 from app.schemas import UserCreate, UserLogin, Token
 from app.dependencies import get_db, create_access_token, get_password_hash, verify_password
 from datetime import timedelta
@@ -32,7 +32,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     token = create_access_token({"sub": db_user.username})
     
     # Yangi tokenni saqlash
-    new_token = TokenModel(access_token=token, token_type="bearer", user_id=db_user.id)
+    new_token = Token(access_token=token, token_type="bearer", user_id=db_user.id)
     db.add(new_token)
     db.commit()
     
