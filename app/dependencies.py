@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.database import SessionLocal
 from app.models import User
 import os
-import datetime
+from datetime import datetime, timedelta
 import boto3
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
