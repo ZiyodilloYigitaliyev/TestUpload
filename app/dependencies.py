@@ -5,7 +5,7 @@ from jose import jwt, JWTError
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session, sessionmaker
-from database import SessionLocal
+from app.database import SessionLocal
 from models import User
 import os
 import datetime

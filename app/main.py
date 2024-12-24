@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from routers import auth, upload, question
-from database import Base, engine
+from app.database import Base, engine
 
 # Ma'lumotlar bazasini yaratish
 Base.metadata.create_all(bind=engine)
