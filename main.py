@@ -18,13 +18,13 @@ import re
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+questionBASE_URL = os.getenv("questionBASE_URL")
 
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if questionBASE_URL and questionBASE_URL.startswith("postgres://"):
+    questionBASE_URL = questionBASE_URL.replace("postgres://", "postgresql://", 1)
 
 Base = declarative_base()
-engine = create_engine(DATABASE_URL)
+engine = create_engine(questionBASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -57,7 +57,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
 
-Base.metadata.create_all(bind=engine)
+Base.metaquestion.create_all(bind=engine)
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
@@ -106,8 +106,8 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 # Token Generation
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
+def create_access_token(question: dict, expires_delta: timedelta = None):
+    to_encode = question.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -148,7 +148,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(question={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/upload/")
@@ -251,7 +251,7 @@ async def upload_zips(files: list[UploadFile], category: str =  Form(...), subje
         shutil.rmtree(extract_dir)
         os.remove(zip_file_location)
 
-    # Save questions to the database
+    # Save questions to the questionbase
     try:
         for q in questions:
             question = Question(
@@ -277,9 +277,9 @@ def get_questions(db: Session = Depends(get_db)):
     
     grouped_questions = {}
     for question in questions:
-        if question.data not in grouped_questions:
-            grouped_questions[question.data] = []
-        grouped_questions[question.data].append({
+        if question.question not in grouped_questions:
+            grouped_questions[question.question] = []
+        grouped_questions[question.question].append({
             "id": question.id,
             "category": question.category,
             "subject": question.subject,
