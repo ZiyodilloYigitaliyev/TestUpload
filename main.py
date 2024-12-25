@@ -130,7 +130,7 @@ class Token(BaseModel):
     token_type: str
 
 # Routes
-@app.post("/register/", response_model=dict)
+@app.post("/register/", response_model=None)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
@@ -152,7 +152,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/upload/")
-async def upload_zips(files: list[UploadFile], current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def upload_zips(files: list[UploadFile], category: str =  Form(...), subject: str =  Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if len(files) > 5:
         raise HTTPException(status_code=400, detail="You can upload up to 5 files at a time.")
 
@@ -255,6 +255,8 @@ async def upload_zips(files: list[UploadFile], current_user: User = Depends(get_
     try:
         for q in questions:
             question = Question(
+                category=category,
+                subject=subject,
                 text=q["text"],
                 options=q["options"],
                 true_answer=q["true_answer"],
@@ -275,9 +277,9 @@ def get_questions(db: Session = Depends(get_db)):
     
     grouped_questions = {}
     for question in questions:
-        if question.category not in grouped_questions:
-            grouped_questions[question.category] = []
-        grouped_questions[question.category].append({
+        if question.data not in grouped_questions:
+            grouped_questions[question.data] = []
+        grouped_questions[question.data].append({
             "id": question.id,
             "category": question.category,
             "subject": question.subject,
