@@ -277,9 +277,9 @@ def get_questions(db: Session = Depends(get_db)):
     
     grouped_questions = {}
     for question in questions:
-        if question.question not in grouped_questions:
-            grouped_questions[question.question] = []
-        grouped_questions[question.question].append({
+        if question.text not in grouped_questions:
+            grouped_questions[question.text] = []
+        grouped_questions[question.text].append({
             "id": question.id,
             "category": question.category,
             "subject": question.subject,
