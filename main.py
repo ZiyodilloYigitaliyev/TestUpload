@@ -153,13 +153,13 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/upload/")
 async def upload_zip(files: list[UploadFile], subject: str = Form(...), category: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not file.filename.endswith(".zip"):
+    if not files.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a ZIP file.")
 
     # Save the uploaded ZIP file
-    zip_file_location = f"./uploaded_{file.filename}"
+    zip_file_location = f"./uploaded_{files.filename}"
     with open(zip_file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        shutil.copyfileobj(files.file, buffer)
 
     # Extract the ZIP file
     extract_dir = "./extracted_files"
