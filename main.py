@@ -18,13 +18,13 @@ import re
 
 load_dotenv()
 
-questionBASE_URL = os.getenv("questionBASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-if questionBASE_URL and questionBASE_URL.startswith("postgres://"):
-    questionBASE_URL = questionBASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 Base = declarative_base()
-engine = create_engine(questionBASE_URL)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
