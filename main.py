@@ -273,8 +273,10 @@ async def upload_zips(files: list[UploadFile], category: str =  Form(...), subje
 
 @app.get("/questions/")
 def get_questions(db: Session = Depends(get_db)):
+    # Ma'lumotlar bazasidagi barcha savollarni olish
     questions = db.query(Question).all()
     
+    # Savollarni kategoriyalar bo'yicha guruhlash
     grouped_questions = {}
     for question in questions:
         if question.category not in grouped_questions:
@@ -289,7 +291,8 @@ def get_questions(db: Session = Depends(get_db)):
             "image": question.image
         })
     
-    return grouped_questions
+    # Guruhlangan savollarni JSON formatida qaytarish
+    return {"data": grouped_questions}
 
 
 @app.delete("/delete-all-questions/", response_model=dict)
