@@ -153,7 +153,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/upload/")
 async def upload_zips(files: list[UploadFile], category: str =  Form(...), subject: str =  Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if len(files) > 5:
+    if len(files) > 6:
         raise HTTPException(status_code=400, detail="You can upload up to 5 files at a time.")
 
     questions = []
