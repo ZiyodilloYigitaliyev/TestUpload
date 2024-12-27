@@ -280,7 +280,6 @@ def get_questions(db: Session = Depends(get_db)):
         if question.category not in grouped_questions:
             grouped_questions[question.category] = []
         grouped_questions[question.category].append({
-            "id": question.id,
             "category": question.category,
             "subject": question.subject,
             "text": question.text,
