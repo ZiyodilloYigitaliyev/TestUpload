@@ -40,7 +40,6 @@ def get_db():
         
 class Question(Base):
     __tablename__ = "questions"
-
     id = Column(Integer, primary_key=True, index=True)
     text = Column(Text, nullable=False)
     options = Column(Text, nullable=False)
@@ -48,7 +47,6 @@ class Question(Base):
     image = Column(String, nullable=True)
     category = Column(String, nullable=True)
     subject = Column(String, nullable=True)
-    user_id = Column(Integer, nullable=False)
 
     
 class User(Base):
@@ -260,8 +258,7 @@ async def upload_zips(files: list[UploadFile], category: str =  Form(...), subje
                 text=q["text"],
                 options=q["options"],
                 true_answer=q["true_answer"],
-                image=q["image"],
-                user_id=current_user.id
+                image=q["image"]
             )
             db.add(question)
         db.commit()
