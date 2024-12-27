@@ -58,7 +58,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
 
 Base.metadata.create_all(bind=engine)
-
+Base.metadata.drop_all(bind=engine)
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY")
 S3_REGION = os.getenv("S3_REGION")
