@@ -5,7 +5,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://response-app-f961b14d1345.herokuapp.com", "http://localhost:3000/"],  # Barcha domenlarga ruxsat
+    allow_origins=["http://localhost:3000", "*"],  # Barcha domenlarga ruxsat
     allow_credentials=True,
     allow_methods=["*"],  # Barcha metodlarga ruxsat
     allow_headers=["*"],  # Barcha so'rov sarlavhalariga ruxsat
