@@ -17,7 +17,6 @@ async def upload_zips(
     files: List[UploadFile],
     categories: List[str] = Form(...),
     subjects: List[str] = Form(...),
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     if len(files) != len(categories) or len(files) != len(subjects):
