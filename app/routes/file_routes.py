@@ -139,7 +139,7 @@ async def upload_zips(
     finally:
         db.close()
 
-   return {"message": "Files uploaded successfully"}
+    return {"message": "Files uploaded successfully"}
 
 
 @router.get("/questions/")
