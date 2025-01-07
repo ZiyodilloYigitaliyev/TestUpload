@@ -11,14 +11,23 @@ import re
 router = APIRouter()
 
 @router.post("/upload/")
-async def upload_zips(files: list[UploadFile], category: str = Form(...), subject: str = Form(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if len(files) > 6:
-        raise HTTPException(status_code=400, detail="You can upload up to 5 files at a time.")
+async def upload_zips(
+    files: List[UploadFile],
+    categories: List[str] = Form(...),
+    subjects: List[str] = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if len(files) != len(categories) or len(files) != len(subjects):
+        raise HTTPException(status_code=400, detail="The number of files, categories, and subjects must match.")
 
     questions = []
-
-    for file in files:
-        if not file.filename.endswith(".zip"):
+    for idx, file in enumerate(files):
+        category = categories[idx]
+        subject = subjects[idx]
+        
+        # Faylni tekshirish
+        if not file.filename.lower().endswith(".zip"):
             raise HTTPException(status_code=400, detail=f"Invalid file type: {file.filename}. Please upload ZIP files.")
 
         # Save the uploaded ZIP file
@@ -130,7 +139,7 @@ async def upload_zips(files: list[UploadFile], category: str = Form(...), subjec
     finally:
         db.close()
 
-    return {"questions": questions}
+   return {"message": "Files uploaded successfully"}
 
 
 @router.get("/questions/")
