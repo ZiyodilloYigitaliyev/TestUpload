@@ -13,3 +13,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+# Ma'lumotlar tuzilmasi uchun Pydantic modeli
+class FileMetadata(BaseModel):
+    category: str
+    subject: str
