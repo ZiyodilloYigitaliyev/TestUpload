@@ -104,6 +104,7 @@ async def upload_zips(
                     current_block["correct_answer"] = text[0]
                     print(red_class)
                 else:
+                    print(red_class)
                     if current_block["variants"]:
                         current_block["variants"][-1] += f" {text}"
 
