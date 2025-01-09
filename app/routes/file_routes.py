@@ -94,7 +94,7 @@ async def upload_zips(
             if text.startswith(("A)", "B)", "C)", "D)")):
                 current_block["variants"].append(text)
                 if red_class in paragraph.get("class", []):
-                    print("red_class:", red_class)
+                    print(paragraph.get("class", [])) 
                     current_block["correct_answer"] = text[0]
 
             else:
