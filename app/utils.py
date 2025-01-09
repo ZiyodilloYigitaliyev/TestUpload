@@ -55,7 +55,6 @@ def find_red_class(soup):
             print("Styles content:", styles)  # Debug uchun
             matches = re.findall(r'\.(\w+)\s*{[^}]*color:\s*#ff0000\s*;?', styles, re.IGNORECASE)
             if matches:
-                print("Found red class:", matches[0])  # Debug uchun
-                return matches[0]  # Birinchi topilgan sinfni qaytaradi
+                return matches[0]
     return None
 
