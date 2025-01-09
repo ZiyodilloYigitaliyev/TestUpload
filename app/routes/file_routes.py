@@ -11,6 +11,12 @@ import logging
 import json
 from typing import List
 
+# Loggerni sozlash
+logging.basicConfig(
+    level=logging.INFO,  # DEBUG darajasiga o'zgartirishingiz mumkin
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 @router.post("/upload/")
