@@ -98,12 +98,10 @@ async def upload_zips(
                     })
                 current_block = {"question": text, "variants": [], "correct_answer": None, "image": None}
             if text.startswith(("A)", "B)", "C)", "D)")):
-                print(text)
                 current_block["variants"].append(text)
                 if red_class in paragraph.get("class", []):
                     current_block["correct_answer"] = text[0]
                 else:
-                    print(red_class)
                     if current_block["variants"]:
                         current_block["variants"][-1] += f" {text}"
 
@@ -116,7 +114,7 @@ async def upload_zips(
                 "true_answer": current_block["correct_answer"],
                 "image": current_block["image"]
             })
-
+        print(current_block)
         # Tozalash
         shutil.rmtree(extract_dir, ignore_errors=True)
         os.remove(zip_file_location)
