@@ -93,7 +93,6 @@ async def upload_zips(
                 current_block = {"question": text, "variants": [], "correct_answer": None, "image": None}
 
             if text.startswith(("A)", "B)", "C)", "D)")):
-                current_block = {"variants": [], "correct_answer": None}
                 current_block["variants"].append(text)
                 if red_class in paragraph.get("class", []):
                     logger.info(f"Red class topildi: {paragraph.get('class', [])}")
