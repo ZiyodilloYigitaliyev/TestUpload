@@ -97,12 +97,12 @@ async def upload_zips(
                         "image": current_block["image"]
                     })
                 current_block = {"question": text, "variants": [], "correct_answer": None, "image": None}
-            print("Varant tekshirilmoqda")
             if text.startswith(("A)", "B)", "C)", "D)")):
+                print("Variant tekshirilmoqda")
                 current_block["variants"].append(text)
                 if red_class in paragraph.get("class", []):
                     current_block["correct_answer"] = text[0]
-                
+                    print(red_class)
                 else:
                     if current_block["variants"]:
                         current_block["variants"][-1] += f" {text}"
