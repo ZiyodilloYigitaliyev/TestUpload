@@ -97,10 +97,12 @@ async def upload_zips(
                         "image": current_block["image"]
                     })
                 current_block = {"question": text, "variants": [], "correct_answer": None, "image": None}
-            if text.startswith(("A)", "B)", "C)", "D)")):
+            elif text.startswith(("A)", "B)", "C)", "D)")):
                 current_block["variants"].append(text)
-                if red_class in paragraph.get("class", []):
-                    current_block["correct_answer"] = text[0]
+                span_tags = paragraph.find_all("span")
+                for span in span_tags:
+                    if red_class in span.get("class", []):
+                        current_block["correct_answer"] = span.get_text(strip=True)[0]
                 else:
                     if current_block["variants"]:
                         current_block["variants"][-1] += f" {text}"
@@ -122,12 +124,12 @@ async def upload_zips(
     # Savollarni bazaga saqlash
     for q in questions:
         question = Question(
-            text=q["text"],
-            options=q["options"],
-            true_answer=q["true_answer"],
-            image=q["image"],
-            category=category,
-            subject=subject
+            text = q["text"],
+            options = q["options"],
+            true_answer = q["true_answer"],
+            image = q["image"],
+            category = category,
+            subject = subject
         )
         db.add(question)
     db.commit()
