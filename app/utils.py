@@ -52,7 +52,10 @@ def find_red_class(soup):
     for style_tag in style_tags:
         styles = style_tag.string
         if styles:
-            matches = re.findall(r'\.(\w+)\s*{[^}]*color:\s*#ff0000;[^}]*}', styles, re.IGNORECASE)
+            print("Styles content:", styles)  # Debug uchun
+            matches = re.findall(r'\.(\w+)\s*{[^}]*color:\s*#ff0000\s*;?', styles, re.IGNORECASE)
             if matches:
+                print("Found red class:", matches[0])  # Debug uchun
                 return matches[0]  # Birinchi topilgan sinfni qaytaradi
     return None
+
