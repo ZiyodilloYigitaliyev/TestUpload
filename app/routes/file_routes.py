@@ -89,7 +89,8 @@ async def upload_zips(
 
             if text[0].isdigit() and "." in text:
                 if current_block["question"]:
-                    options_text = "\n".join(current_block["variants"])
+                    unique_variants = list(dict.fromkeys(current_block["variants"]))
+                    options_text = ", ".join(unique_variants)
                     questions.append({
                         "text": current_block["question"],
                         "options": options_text,
