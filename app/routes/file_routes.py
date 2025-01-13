@@ -10,6 +10,8 @@ import re
 import logging
 import json
 from typing import List
+from bs4 import BeautifulSoup
+
 
 # Loggerni sozlash
 logging.basicConfig(
@@ -74,6 +76,7 @@ async def upload_zips(
             if not text:
                 continue
 
+            
             img_tag = paragraph.find("img")
             if img_tag:
                 img_src = img_tag["src"]
@@ -118,7 +121,6 @@ async def upload_zips(
                 "image": current_block["image"]
             })
         print(current_block)
-        # Tozalash
         shutil.rmtree(extract_dir, ignore_errors=True)
         os.remove(zip_file_location)
 
@@ -136,12 +138,11 @@ async def upload_zips(
     db.commit()
 
     return {"message": "Fayllar muvaffaqiyatli yuklandi"}
+
 @router.get("/questions/")
 def get_questions(db: Session = Depends(get_db)):
-    # Ma'lumotlar bazasidagi barcha savollarni olish
     questions = db.query(Question).all()
 
-    # Savollarni kategoriyalar bo'yicha guruhlash
     grouped_questions = {}
     for question in questions:
         if question.category not in grouped_questions:
@@ -155,7 +156,6 @@ def get_questions(db: Session = Depends(get_db)):
             "image": question.image
         })
 
-    # Guruhlangan savollarni JSON formatida qaytarish
     return {"data": grouped_questions}
 
 
